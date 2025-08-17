@@ -1,32 +1,35 @@
 
-import { fetchNoteById } from "@/lib/api";
 import NotesClient from "./Notes.client";
+import { Metadata } from "next";
 
-type Props = {
-  params: Promise<{ id: string }>
-}
+type Params = { slug?: string[] };
 
-export async function generateMetadata({ params }: Props) {
-  const { id } = await params
-  const note = await fetchNoteById(id)
+export async function generateMetadata(
+  { params }: { params: Params }
+): Promise<Metadata> {
+  const raw = params.slug?.[0];
+  const tag =
+    !raw || raw.toLowerCase() === "all"
+      ? undefined
+      : decodeURIComponent(raw);
+
   return {
-    title: `Note: ${note.title}`,
-    description: note.content.slice(0, 30),
-  }
+    title: tag ? `Notes – ${tag}` : "Notes",
+    description: tag
+      ? `Browse notes tagged with "${tag}"`
+      : "Browse all notes",
+  };
 }
-
 
 export default async function NotesPage({
   params,
 }: {
   params: Promise<{ slug?: string[] }>;
 }) {
-  
   const { slug } = await params; 
   const raw = slug?.[0];
   const tag =
     !raw || raw.toLowerCase() === "all" ? undefined : decodeURIComponent(raw);
-    
 
   return <NotesClient tag={tag} />;
 }

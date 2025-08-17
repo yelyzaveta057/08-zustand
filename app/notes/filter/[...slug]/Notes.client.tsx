@@ -75,4 +75,3 @@ const { data, isLoading, error } = useQuery({
     </div>
   );
 }
-
