@@ -7,8 +7,9 @@ import { useEffect } from "react";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Pagination from "@/components/Pagination/Pagination";
 import NoteList from "@/components/NoteList/NoteList";
-import NoteForm from "@/components/NoteForm/NoteForm";
-import Modal from "@/components/Modal/Modal";
+import Link from "next/link";
+
+
 
 import type { NotesHttpResponse } from "@/lib/api";
 import css from "./NotesPage.module.css"
@@ -21,7 +22,7 @@ interface NotesClientProps {
 export default function NotesClient({tag, initialData }: NotesClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [debounceSearchTerm] = useDebounce(searchTerm, 1000);
 
  const perPage = 12;
@@ -35,8 +36,6 @@ const { data, isLoading, error } = useQuery({
 });
 ;
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
 
   const handleSearchChange = (newTerm: string) => {
     setSearchTerm(newTerm);
@@ -55,9 +54,9 @@ const { data, isLoading, error } = useQuery({
             onPageChange={setCurrentPage}
           />
         )}
-        <button className={css.button} onClick={openModal}>
+  <Link className={css.button} href="/notes/action/create">
           Create note +
-        </button>
+        </Link>
       </header>
 
       {isLoading && <strong className={css.loading}>Loading notes...</strong>}
@@ -67,11 +66,7 @@ const { data, isLoading, error } = useQuery({
         </div>
       )}
       {data && <NoteList notes={data.notes} />}
-     {isModalOpen && (
-  <Modal onClose={closeModal}>
-    <NoteForm onClose={closeModal} onSuccess={closeModal} />
-  </Modal>
-)}
+ 
     </div>
   );
 }

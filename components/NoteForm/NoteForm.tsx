@@ -1,101 +1,112 @@
+"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { NewNoteData } from "../../types/note";
+import { useRouter } from "next/navigation";
 import { createNote } from "@/lib/api";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-
 import css from "./NoteForm.module.css";
+import { useNoteDraft } from "@/lib/store/noteStore";
+import { ChangeEvent } from "react";
 
-interface NoteFormProps {
-  onSuccess: () => void;
-  onClose: () => void;
-}
 
-export default function NoteForm({ onSuccess, onClose }: NoteFormProps) {
-  const queryClient = useQueryClient();
+type NewNoteData = {
+  title: string;
+  content: string;
+  tag: "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
+};
 
+const TAGS = ["Todo", "Work", "Personal", "Meeting", "Shopping"] as const;
+
+export default function NoteForm() {
+  const {draft, setDraft, clearDraft} = useNoteDraft();
+  const qc = useQueryClient();
+  const router = useRouter();
+
+
+console.log('darft', draft) 
   const { mutate } = useMutation({
-    mutationFn: (noteData: NewNoteData) => createNote(noteData),
+    mutationFn: (data: NewNoteData) => createNote(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onSuccess();
+      clearDraft();
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      router.push("/notes/filter/All");
+      router.refresh();
     },
   });
 
-  const NoteSchema = Yup.object().shape({
-    title: Yup.string()
-      .min(3, "Must be at least 3 characters")
-      .max(50, "Must be at most 50 characters")
-      .required("Title is required"),
-    content: Yup.string().max(500, "Must be at most 500 characters"),
-    tag: Yup.string()
-      .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
-      .required("Tag is required"),
-  });
+  const handleSubmit = (formData: FormData) => {
+    const title = (formData.get("title") as string)?.trim() || "";
+    const content = (formData.get("content") as string)?.trim() || "";
+    const tag = (formData.get("tag") as NewNoteData["tag"]) || "Todo";
+
+    //валідація 
+    if (title.length < 3 || title.length > 50) return;
+    if (content.length > 500) return;
+    if (!TAGS.includes(tag)) return;
+
+    mutate({ title, content, tag });
+  };
+
+  const handleCancel = () => router.push("/notes/filter/All");
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> ) =>{
+    
+    setDraft({
+      ...(draft as     NewNoteData ),
+[ e.target.name as keyof  NewNoteData]:  e.target.value,
+
+    })
+  }
 
   return (
-    <Formik
-      initialValues={{ title: "", content: "", tag: "Todo" }}
-      validationSchema={NoteSchema}
-      onSubmit={(values, actions) => {
-        mutate(values);
-        actions.resetForm();
-      }}
-    >
-      {({ isSubmitting }) => (
-        <Form className={css.form}>
-          <div className={css.formGroup}>
-            <label htmlFor="title">Title</label>
-            <Field id="title" type="text" name="title" className={css.input} />
-            <ErrorMessage name="title" component="span" className={css.error} />
-          </div>
+    <form action={handleSubmit} className={css.form}>
+      <div className={css.formGroup}>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          className={css.input}
+          placeholder="My note title"
+          required
+          minLength={3}
+          maxLength={50}
 
-          <div className={css.formGroup}>
-            <label htmlFor="content">Content</label>
-            <Field
-              as="textarea"
-              id="content"
-              name="content"
-              rows="8"
-              className={css.textarea}
-            />
-            <ErrorMessage
-              name="content"
-              component="span"
-              className={css.error}
-            />
-          </div>
+          onChange={handleChange}
+          defaultValue={draft.title}
+        />
+      </div>
 
-          <div className={css.formGroup}>
-            <label htmlFor="tag">Tag</label>
-            <Field as="select" id="tag" name="tag" className={css.select}>
-              <option value="Todo">Todo</option>
-              <option value="Work">Work</option>
-              <option value="Personal">Personal</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Shopping">Shopping</option>
-            </Field>
-            <ErrorMessage name="tag" component="span" className={css.error} />
-          </div>
+      <div className={css.formGroup}>
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          name="content"
+          className={css.textarea}
+         onChange={handleChange}
+         defaultValue={draft.title}
+          rows={8}
+          maxLength={500}
+        />
+      </div>
 
-          <div className={css.actions}>
-            <button
-              type="button"
-              className={css.cancelButton}
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={css.submitButton}
-              disabled={isSubmitting}
-            >
-              Create note
-            </button>
-          </div>
-        </Form>
-      )}
-    </Formik>
+      <div className={css.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select onChange={handleChange}  id="tag" name="tag" className={css.select} defaultValue="Todo" required >
+          {TAGS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={css.actions}>
+        <button type="button" className={css.cancelButton} onClick={handleCancel}>
+          Cancel
+        </button>
+        <button type="submit" className={css.submitButton}>
+          Create note
+        </button>
+      </div>
+    </form>
   );
 }
