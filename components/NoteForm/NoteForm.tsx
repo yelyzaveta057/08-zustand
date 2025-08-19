@@ -22,7 +22,7 @@ export default function NoteForm() {
   const router = useRouter();
 
 
-console.log('darft', draft) 
+
   const { mutate } = useMutation({
     mutationFn: (data: NewNoteData) => createNote(data),
     onSuccess: () => {
@@ -46,7 +46,7 @@ console.log('darft', draft)
     mutate({ title, content, tag });
   };
 
-  const handleCancel = () => router.push("/notes/filter/All");
+  const handleCancel = () => router.back();
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> ) =>{
     
     setDraft({
@@ -82,7 +82,7 @@ console.log('darft', draft)
           name="content"
           className={css.textarea}
          onChange={handleChange}
-         defaultValue={draft.title}
+         defaultValue={draft.content}
           rows={8}
           maxLength={500}
         />
