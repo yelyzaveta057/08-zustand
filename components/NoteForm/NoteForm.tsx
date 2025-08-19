@@ -90,7 +90,7 @@ export default function NoteForm() {
 
       <div className={css.formGroup}>
         <label htmlFor="tag">Tag</label>
-        <select onChange={handleChange}  id="tag" name="tag" className={css.select} defaultValue="Todo" required >
+        <select onChange={handleChange}  id="tag" name="tag" className={css.select} defaultValue={draft?.tag} required >
           {TAGS.map((t) => (
             <option key={t} value={t}>
               {t}
